@@ -1,19 +1,56 @@
 const express=require("express")
-
 const router=express.Router()
-
 const usercontroller=require("../Controller/userController")
 const middleware=require("../middleWare/auth")
 
-router.get("avinay",function(req,res){
-    console.log("testing server")
-})
 
+// /**
+//  * @swagger
+//  * /:
+//  * get:
+//  *    summary:testing api
+//  *     description:rest apis
+//  *      responses:
+//  *          200:
+//  */
+
+// router.get("/",(req,res)=>{
+//     res.send("hey how are you")
+// })
+
+// /**
+//  * @swagger
+//  * /route/registration:
+//  *   post:
+//  *     parameters:
+//  *      - in: body
+//  *        name: Usr
+//  *        description: New userModel
+//  *        schema:
+//  *          type: object
+//  *          properties:
+//  *            name:
+//  *              type: string
+//  *            email:
+//  *              type: string
+//  *            phoneNumber:
+//  *              type: string
+//  *             password:
+//  *               type:String
+//  *     responses:
+//  *       201:
+//  *         description: Created
+//  */
 router.post("/registration",usercontroller.userDetails)
 
 
 router.post("/login",usercontroller.loginUser)
 
-router.get("/user/:userId/profile",middleware.authenticate,usercontroller.getUserDetailsById)
+
+// router.get("/user/:userId",middleware.authenticate,usercontroller.signout)
+
+router.get("/logout",middleware.authenticate,usercontroller.logout)
+
+// router.post("/otp",usercontroller.otp)
 
 module.exports=router

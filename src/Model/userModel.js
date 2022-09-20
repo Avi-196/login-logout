@@ -12,26 +12,17 @@ const UserdeatilsSchema=new mongoose.Schema({
         lowerCase:true,
         trim:true
     },
+    phoneNumber:{
+        type:String,
+         required:true,
+         unique:true, 
+    },
     password: {
         type: String,
         required: true,
         min: 5,
         max: 8
     },
-
-    avatar:{
-        type:String,
-        required:true
-    },
-
-      address:{
-         type:String,
-         required:true
-      },
-      country:{
-         type:String,
-         required:true
-      }
-    
+        
 },{timestamps:true})
-module.exports=mongoose.model("User",UserdeatilsSchema)
+module.exports=mongoose.model("Usr",UserdeatilsSchema)

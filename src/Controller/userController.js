@@ -1,11 +1,11 @@
-//importing module to use in this file we everything in node js modules they are state in 
-//provate mood in evry file so if we have need to use in other file we have to import file by using require
+
 
 
 const userModel=require("../Model/userModel")
-const aws=require("../Controller/awsController")
 
 const jwt=require("jsonwebtoken")
+
+const otpGenerator=require("otp-generator")
 
 
 //isValid is create for validation that if user provide epty string it through error towards the user
@@ -15,19 +15,12 @@ const isValid=function (value){
     return true
 }
 
-//here using validation for uploading file or logo or image
-const isValidfiles = function (files) {
-    if (files && files.length > 0)
-        return true
-}
-
 
 const userDetails=async function(req,res){
     try{
         let data =req.body
-        let files=req.files
 
-        let {name,email,password,address,country}=data
+        let {name,email,phoneNumber,password}=data
 
         if(Object.keys(data).length==0){
             return res.status(400).send({status:false,msg:"empty"})
@@ -44,39 +37,38 @@ const userDetails=async function(req,res){
             return res.status(400).send({ status: false, msg: "Invalid email" })
             
         }
+
         if(!isValid(password)){
             return res.status(400).send({status:false,msg:"password is rquired"})
       }
-      if (password.length > 8) {
-        return  res.status(400).send({ status: false, msg: "Password should be less than 15 characters"})
+      if (password.length >= 8) {
+        return  res.status(400).send({ status: false, msg: "Password should be less than 8 characters"})
           
       }
-      if (password.length < 5) {
-        return  res.status(400).send({ status: false, msg: "Password should be more than 8 characters"})
+      if (password.length <= 5) {
+        return  res.status(400).send({ status: false, msg: "Password should be more than 5 characters"})
           
       }
-     if(!isValid(address)){
-         return res.status(400).send({status:false,msg:"address is required"})
-     }
-
-     if(!isValid(country)){
-        return res.status(400).send({status:false,msg:"please fill the country"})
-     }
-
+      if (!isValid(phoneNumber)) {
+        res.status(400).send({ status: false, msg: "Phone Number is mandatory" })
+        return
+    }
+    if (!(/^\d{10}$/.test(phoneNumber))) {
+        res.status(400).send({ status: false, msg: "Invalid Phone Number, it should be of 10 digits" })
+        return
+    }
+ 
      let emailAlreadyPresent=await userModel.findOne({email})
      if(emailAlreadyPresent){
         return res.status(406).send({status:false,msg:"email is alraedy taken"})
      }
 
-     if(!isValidfiles(files)){
-        return res.status(400).send({status:false,msg:"please put your avatar"})
+     let phoneNumberAlreadyPresent=await userModel.findOne({phoneNumber})
+     if(phoneNumberAlreadyPresent){
+         return res.status(406).send({status:false,msg:"this phoneNumber already exist"})
      }
-
-     avatar=await aws.uploadFile(files[0])
-     
-       
      const userData={
-        name,email,password,address,country,avatar
+        name,email, phoneNumber,password
      }
       const userdatacreated=await userModel.create(userData)
       return res.status(201).send({status:true,msg:"data sucessfully created",data:userdatacreated})
@@ -112,9 +104,11 @@ const loginUser=async function(req,res){
         }
         else{
             let token=jwt.sign({userId:userDetails._id,
-
-            },"value_Pitch",{expiresIn:"60m"})
-            res.header("x-api-key",token)
+         
+            },"avinay",)
+            res.cookie("token", token, {
+                httpOnly: true
+            })
             res.status(201).send({status:true,msg:"user login sucessfull",data:token})
 
         }
@@ -127,27 +121,52 @@ const loginUser=async function(req,res){
 }
 
 
-const getUserDetailsById=async function(req,res){
-    try{
-        const userId=req.params.userId
-
-        if(req.userId!==userId){
-            return res.status(401).send({status:false,msg:"you are not authorized"})
-
-        }
-
-        const profile=await userModel.findOne({_id:userId})
-
-        if(!profile){
-            return res.status(400).send({status:false,msg:"profile does not found"})
-        }
-        return res.status(200).send({status:false,msg:"profile detatils",data:profile})
 
 
-    }catch(error){
-        res.status(500).send({msg:error.message})
+
+// const signout=async function(req,res){
+//     let userId=req.params.userId
+//     if(req.userId!=userId){
+//         return res.status(401).send({msg:"you are not authorized"})
+//     }
+//     let logout=await userModel.findOne({_id:userId}) 
+
+//    logout.token=""
+
+//      return res.status(200).send({msg:"userlogout"})
+
+// }
+
+const logout = async function (req, res) {
+    try {
+        res.clearCookie("token")
+        return res.status(200).send({ status: true, msg: "logout successfully" })
+
+    }
+    catch (error) {
+        console.log(error)
+        return res.status(500).send({ status: false, msg: error.message })
     }
 }
+
+
+// const otp=async function(req,res){
+//     let phoneNumber=req.body.phoneNumber
+//     const user=await userModel.find({
+//          phoneNumber:req.body.phoneNumber
+//     })
+//     const OTP=otpGenerator.generate(4,{
+//         digits:true
+//     },5000)
+//     console.log(OTP)
+//     let otp=new Otp({phoneNumber:phoneNumber,otp:OTP})
+//     const result=await otp.save()
+//     console.log(result)
+//     return res.status(200).send({msg:"otp send sucessfully"})
+// }
+
+
+
 
 
 
@@ -158,4 +177,38 @@ module.exports.userDetails=userDetails
 
 module.exports.loginUser=loginUser
 
-module.exports.getUserDetailsById=getUserDetailsById
+
+// module.exports.signout=signout
+
+module.exports.logout=logout
+// module.exports.otp=otp
+
+
+// const data=["abandon","ability","able","about","above"]
+// // const data2=["abandon","ability","able","about","above"]
+// data.forEach(entry=>{
+//     let reg=/[a-z ]+/gi
+//     let result=entry.match(reg)
+//     console.log(result)
+// })
+
+
+const input = "hello how are you"
+
+check = ["hello", "how", "are", "hey"];
+
+const matched = [];
+
+input
+  .split(" ")
+  .forEach(item =>
+    check.includes(item)
+      ? matched.push(item)
+      : null
+  ); 
+
+console.log( matched );
+
+
+
+
