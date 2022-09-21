@@ -51,6 +51,10 @@ router.post("/login",usercontroller.loginUser)
 
 router.get("/logout",middleware.authenticate,usercontroller.logout)
 
+router.post('/send-reset-password-email', usercontroller.sendUserPasswordResetEmail)
+
+router.post('/reset-password/:id/:token', usercontroller.userPasswordReset)
+
 // router.post("/otp",usercontroller.otp)
 
 module.exports=router

@@ -166,6 +166,51 @@ const logout = async function (req, res) {
 // }
 
 
+   const sendUserPasswordResetEmail = async (req, res) => {
+    const { email } = req.body
+    if (email) {
+      const user = await userModel.findOne({ email: email })
+      if (user) {
+        const secret = user._id + "avinay"
+        const token = jwt.sign({ userID: user._id }, secret, { expiresIn: '15m' })
+        const link = `http://127.0.0.1:4000/${user._id}/${token}`
+        console.log(link)
+        // // Send Email
+        // let info = await transporter.sendMail({
+        //   from: avinay@gmail.com,
+        //   to: user.email,
+        //   subject: " Password Reset Link"
+        // })
+        res.send({ "status": "success", "message": "Password Reset Email Sent... Please Check Your Email" })
+      } else {
+        res.send({ "status": "failed", "message": "Email doesn't exists" })
+      }
+    } else {
+      res.send({ "status": "failed", "message": "Email Field is Required" })
+    }
+  }
+         
+
+  const userPasswordReset = async (req, res) => {
+    const { password } = req.body
+    const { id, token } = req.params
+    const user = await userModel.findById(id)
+    const new_secret = user._id + "avinay"
+    try {
+      jwt.verify(token, new_secret)
+      if (password) { 
+          await userModel.findByIdAndUpdate(user._id, { $set: { password: password } })
+          res.send({ "status": "success", "message": "Password Reset Successfully" })
+        
+      } else {
+        res.send({ "status": "failed", "message": "All Fields are Required" })
+      }
+    } catch (error) {
+      console.log(error)
+      res.send({ "status": "failed", "message": "Invalid Token" })
+    }
+  }
+
 
 
 
@@ -177,6 +222,10 @@ module.exports.userDetails=userDetails
 
 module.exports.loginUser=loginUser
 
+module.exports.sendUserPasswordResetEmail=sendUserPasswordResetEmail
+
+
+module.exports.userPasswordReset=userPasswordReset
 
 // module.exports.signout=signout
 
