@@ -6,6 +6,8 @@ const userModel=require("../Model/userModel")
 const jwt=require("jsonwebtoken")
 
 const otpGenerator=require("otp-generator")
+const nodemailer=require("nodemailer")
+const randomstring=require('randomstring')
 
 
 //isValid is create for validation that if user provide epty string it through error towards the user
@@ -13,6 +15,38 @@ const isValid=function (value){
     if(typeof value ==="undefined"||typeof value ===null) return false
     if(typeof value ==='string' &&  value.trim().length ===0) return false
     return true
+}
+
+const sentResetpasswordMail=async function(name,email,token){
+  try {
+    const transporter=  nodemailer.createTransport({
+          host:'smtp.gmail.com',
+          port:587,
+          secure:false,
+          require:true,
+          auth:{
+              user:"avinaymishra63@gmail.com",
+              pass:"qajznfzkwvzxpdso"
+          }
+      });
+      const mailOptions={
+          from:"avinaymishra63@gmail.com",
+          to:email,
+          for:"reset password",
+          // html:'<p> hii '+name+'  please click on the link <a href= "http://localhost:4000/?token='+token+'" and reset your password</a>'
+          html:'<p>hii '+name+' You requested for reset password, kindly use this <a href="http://localhost:4000/?token=' + token + '">link</a> to reset your password</p>'
+      }
+      transporter.sendMail(mailOptions,function(error,info){
+          if(error){
+              console.log(error)
+          }
+           else{
+              console.log('mail has been sent:-',info.response)
+           }
+      })
+  } catch (error) {
+      return res.status(400).send({msg:error})
+  }
 }
 
 
@@ -166,52 +200,125 @@ const logout = async function (req, res) {
 // }
 
 
-   const sendUserPasswordResetEmail = async (req, res) => {
-    const { email } = req.body
-    if (email) {
-      const user = await userModel.findOne({ email: email })
-      if (user) {
-        const secret = user._id + "avinay"
-        const token = jwt.sign({ userID: user._id }, secret, { expiresIn: '15m' })
-        const link = `http://127.0.0.1:4000/${user._id}/${token}`
-        console.log(link)
-        // // Send Email
-        // let info = await transporter.sendMail({
-        //   from: avinay@gmail.com,
-        //   to: user.email,
-        //   subject: " Password Reset Link"
-        // })
-        res.send({ "status": "success", "message": "Password Reset Email Sent... Please Check Your Email" })
-      } else {
-        res.send({ "status": "failed", "message": "Email doesn't exists" })
-      }
-    } else {
-      res.send({ "status": "failed", "message": "Email Field is Required" })
-    }
-  }
-         
-
-  const userPasswordReset = async (req, res) => {
-    const { password } = req.body
-    const { id, token } = req.params
-    const user = await userModel.findById(id)
-    const new_secret = user._id + "avinay"
-    try {
-      jwt.verify(token, new_secret)
-      if (password) { 
-          await userModel.findByIdAndUpdate(user._id, { $set: { password: password } })
-          res.send({ "status": "success", "message": "Password Reset Successfully" })
+  //  const sendUserPasswordResetEmail = async (req, res) => {
+  //   const { email } = req.body
+  //   if (email) {
+  //     const user = await userModel.findOne({ email: email })
+  //     if (user) {
+  //       const secret = user._id + "avinay"
+  //       const token = jwt.sign({ userID: user._id }, secret, { expiresIn: '15m' })
+  //       const link = `http://localhost:4000/${user._id}/${token}`
+  //       console.log(link)
+  //       // // Send Email
+  //       // let info = await transporter.sendMail({
+  //       //   from: avinay@gmail.com,
+  //       //   to: user.email,
+  //       //   subject: " Password Reset Link"
+  //       // })
+  //       res.send({ "status": "success", "message": "Password Reset Email Sent... Please Check Your Email" })
+  //     } else {
+  //       res.send({ "status": "failed", "message": "Email doesn't exists" })
+  //     }
+  //   } else {
+  //     res.send({ "status": "failed", "message": "Email Field is Required" })
+  //   }
+  // }
         
-      } else {
-        res.send({ "status": "failed", "message": "All Fields are Required" })
+  
+const sendUserPasswordResetEmail=async function(req,res){
+  try {
+         const email=req.body.email
+      const userData=await userModel.findOne({email:email})
+      if(userData){
+        const randomString= randomstring.generate({expiresIn:"10m"})
+    const data=   await userModel.updateOne({email:email},{$set:{token:randomString}})
+    console.log(data)
+    sentResetpasswordMail(userData.name,userData.email,randomString)
+   return  res.status(200).send({msg:"mail has been sent please click on the link"})
       }
-    } catch (error) {
-      console.log(error)
-      res.send({ "status": "failed", "message": "Invalid Token" })
-    }
+      else{
+          res.status(400).send({mgs:"mail does not esist"})
+      }
+      
+  } catch (error) {
+      return res.status(400).send({msg:error.message})
   }
+}
 
 
+  // const userPasswordReset = async (req, res) => {
+  //   const { password } = req.body
+  //   const { id, token } = req.params
+  //   const user = await userModel.findById(id)
+  //   const new_secret = user._id + "avinay"
+  //   try {
+  //     jwt.verify(token, new_secret)
+  //     if (password) { 
+  //         await userModel.findByIdAndUpdate(user._id, { $set: { password: password } })
+  //         res.send({ "status": "success", "message": "Password Reset Successfully" })
+        
+  //     } else {
+  //       res.send({ "status": "failed", "message": "All Fields are Required" })
+  //     }
+  //   } catch (error) {
+  //     console.log(error)
+  //     res.send({ "status": "failed", "message": "Invalid Token" })
+  //   }
+  // }
+
+  const userPasswordReset=async function(req,res){
+    try {
+        const token=req.query.token
+       const tokenData= await userModel.findOne({token:token});
+       if(tokenData){
+             const password=req.body.password
+          const userData=  await userModel.findByIdAndUpdate({_id:tokenData._id},{$set:{password:password,token:''}},{new:true})
+          return res.status(200).send({msg:'user password has been reset',data:userData})
+       }
+         else{
+            res.status(200).send({msg:"this link is not right"})
+         }
+    } catch (error) {
+        return res.status(400).send({msg:error})
+    }
+}
+
+
+// const changeUserPassword = async (req, res) => {
+//   const  password  = req.body.password
+//   const userId = req.params.userId
+//   if(req.userId!==userId){
+//       return res.status(401).send({status:false,msg:"you are not authorized"})
+//   }
+//     if (password) {
+//       res.send({ "status": "failed", "message": "New Password and Confirm New Password doesn't match" })
+//     } else {
+     
+//       await userModel.findByIdAndUpdate({_id:userId}, { $set: { password:password } })
+//       res.send({ "status": "success", "message": "Password changed succesfully" })
+//     }
+// }
+
+const changeUserPassword = async function (req, res) {
+    try {
+        const userId=req.body.userId
+        if(req.userId!==userId){
+            return res.status(401).send({status:false,msg:"you are not authorized"})
+        }
+        const password=req.body.password
+        const data=await userModel.findOne({_id:userId})
+
+        if(data){
+             await  userModel.findByIdAndUpdate({_id:userId},{$set:{password:password}})
+               return res.status(200).send({msg:"password is updated"})
+        }
+        else{
+            res.status(200).send({msg:"userId is not found !"})
+        }
+    } catch (error) {
+        return res.status(400).send({msg:error})
+    }
+}
 
 
 
@@ -230,6 +337,8 @@ module.exports.userPasswordReset=userPasswordReset
 // module.exports.signout=signout
 
 module.exports.logout=logout
+
+module.exports.changeUserPassword=changeUserPassword
 // module.exports.otp=otp
 
 
@@ -242,21 +351,21 @@ module.exports.logout=logout
 // })
 
 
-const input = "hello how are you"
+// const input = "hello how are you"
 
-check = ["hello", "how", "are", "hey"];
+// check = ["hello", "how", "are", "hey"];
 
-const matched = [];
+// const matched = [];
 
-input
-  .split(" ")
-  .forEach(item =>
-    check.includes(item)
-      ? matched.push(item)
-      : null
-  ); 
+// input
+//   .split(" ")
+//   .forEach(item =>
+//     check.includes(item)
+//       ? matched.push(item)
+//       : null
+//   ); 
 
-console.log( matched );
+// console.log( matched );
 
 
 

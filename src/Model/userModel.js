@@ -23,6 +23,10 @@ const UserdeatilsSchema=new mongoose.Schema({
         min: 5,
         max: 8
     },
+    token:{
+        type:String,
+        default:''
+    }
         
 },{timestamps:true})
 module.exports=mongoose.model("Usr",UserdeatilsSchema)
