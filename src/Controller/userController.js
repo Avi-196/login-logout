@@ -26,7 +26,7 @@ const sentResetpasswordMail=async function(name,email,token){
           require:true,
           auth:{
               user:"avinaymishra63@gmail.com",
-              pass:"qajznfzkwvzxpdso"
+              pass:"my pass"
           }
       });
       const mailOptions={
