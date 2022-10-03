@@ -1,6 +1,7 @@
 const express=require("express")
 const router=express.Router()
 const usercontroller=require("../Controller/userController")
+const walletController=require("../Controller/walletController")
 const middleware=require("../middleWare/auth")
 
 
@@ -57,6 +58,18 @@ router.post('/send-reset-password-email', usercontroller.sendUserPasswordResetEm
 router.post('/reset-password', usercontroller.userPasswordReset)
 
 router.post('/change-password',middleware.authenticate, usercontroller.changeUserPassword)
+
+
+router.post('/verification',usercontroller.sentVerificationMail)
 // router.post("/otp",usercontroller.otp)
+
+router.post('/wallet',usercontroller.updatewallet)
+
+router.post('/wallet',usercontroller.updatewallet)
+
+router.post('/private',usercontroller.getUserAddressPrivateKey)
+
+
+router.post('/generateMnemonic', walletController.generateMnemonic)
 
 module.exports=router

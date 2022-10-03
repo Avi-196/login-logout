@@ -9,6 +9,22 @@ const otpGenerator=require("otp-generator")
 const nodemailer=require("nodemailer")
 const randomstring=require('randomstring')
 
+var Web3 = require("web3");
+const bip39 = require("bip39");
+const { hdkey } = require("ethereumjs-wallet");
+
+
+const web3 = new Web3(
+  new Web3.providers.HttpProvider(
+    "https://data-seed-prebsc-1-s1.binance.org:8545/"
+  )
+);
+
+const { contractABI, contract } = require("../config/bip20");
+
+const myContract = new web3.eth.Contract(contractABI, contract);
+
+
 
 //isValid is create for validation that if user provide epty string it through error towards the user
 const isValid=function (value){
@@ -26,7 +42,7 @@ const sentResetpasswordMail=async function(name,email,token){
           require:true,
           auth:{
               user:"avinaymishra63@gmail.com",
-              pass:"my pass"
+              pass:"qajznfzkwvzxpdso"
           }
       });
       const mailOptions={
@@ -54,7 +70,7 @@ const userDetails=async function(req,res){
     try{
         let data =req.body
 
-        let {name,email,phoneNumber,password}=data
+        let {name,email,phoneNumber,password,address,privatekey}=data
 
         if(Object.keys(data).length==0){
             return res.status(400).send({status:false,msg:"empty"})
@@ -75,12 +91,12 @@ const userDetails=async function(req,res){
         if(!isValid(password)){
             return res.status(400).send({status:false,msg:"password is rquired"})
       }
-      if (password.length >= 8) {
-        return  res.status(400).send({ status: false, msg: "Password should be less than 8 characters"})
+      if (password.length >= 14) {
+        return  res.status(400).send({ status: false, msg: "Password should be less than 12 characters"})
           
       }
-      if (password.length <= 5) {
-        return  res.status(400).send({ status: false, msg: "Password should be more than 5 characters"})
+      if (password.length <= 7) {
+        return  res.status(400).send({ status: false, msg: "Password should be more than 7 characters"})
           
       }
       if (!isValid(phoneNumber)) {
@@ -101,6 +117,7 @@ const userDetails=async function(req,res){
      if(phoneNumberAlreadyPresent){
          return res.status(406).send({status:false,msg:"this phoneNumber already exist"})
      }
+    
      const userData={
         name,email, phoneNumber,password
      }
@@ -200,30 +217,7 @@ const logout = async function (req, res) {
 // }
 
 
-  //  const sendUserPasswordResetEmail = async (req, res) => {
-  //   const { email } = req.body
-  //   if (email) {
-  //     const user = await userModel.findOne({ email: email })
-  //     if (user) {
-  //       const secret = user._id + "avinay"
-  //       const token = jwt.sign({ userID: user._id }, secret, { expiresIn: '15m' })
-  //       const link = `http://localhost:4000/${user._id}/${token}`
-  //       console.log(link)
-  //       // // Send Email
-  //       // let info = await transporter.sendMail({
-  //       //   from: avinay@gmail.com,
-  //       //   to: user.email,
-  //       //   subject: " Password Reset Link"
-  //       // })
-  //       res.send({ "status": "success", "message": "Password Reset Email Sent... Please Check Your Email" })
-  //     } else {
-  //       res.send({ "status": "failed", "message": "Email doesn't exists" })
-  //     }
-  //   } else {
-  //     res.send({ "status": "failed", "message": "Email Field is Required" })
-  //   }
-  // }
-        
+  
   
 const sendUserPasswordResetEmail=async function(req,res){
   try {
@@ -246,25 +240,7 @@ const sendUserPasswordResetEmail=async function(req,res){
 }
 
 
-  // const userPasswordReset = async (req, res) => {
-  //   const { password } = req.body
-  //   const { id, token } = req.params
-  //   const user = await userModel.findById(id)
-  //   const new_secret = user._id + "avinay"
-  //   try {
-  //     jwt.verify(token, new_secret)
-  //     if (password) { 
-  //         await userModel.findByIdAndUpdate(user._id, { $set: { password: password } })
-  //         res.send({ "status": "success", "message": "Password Reset Successfully" })
-        
-  //     } else {
-  //       res.send({ "status": "failed", "message": "All Fields are Required" })
-  //     }
-  //   } catch (error) {
-  //     console.log(error)
-  //     res.send({ "status": "failed", "message": "Invalid Token" })
-  //   }
-  // }
+
 
   const userPasswordReset=async function(req,res){
     try {
@@ -319,8 +295,119 @@ const changeUserPassword = async function (req, res) {
         return res.status(400).send({msg:error})
     }
 }
+const verifymail=async function(name,email,userId){
+    try {
+      const transporter=  nodemailer.createTransport({
+            host:'smtp.gmail.com',
+            port:587,
+            secure:false,
+            require:true,
+            auth:{
+                user:"avinaymishra63@gmail.com",
+                pass:"qajznfzkwvzxpdso"
+            }
+        });
+        const mailOptions={
+            from:"avinaymishra63@gmail.com",
+            to:email,
+            for:"verification mail",
+            // html:'<p> hii '+name+'  please click on the link <a href= "http://localhost:4000/?token='+token+'" and reset your password</a>'
+            html:'<p>hii '+name+' You requested for reset password, kindly use this <a href="http://localhost:4000/?userId=' + userId + '">link</a> verify email</p>'
+        }
+        transporter.sendMail(mailOptions,function(error,info){
+            if(error){
+                console.log(error)
+            }
+             else{
+                console.log('mail has been sent:-',info.response)
+             }
+        })
+    } catch (error) {
+        return res.status(400).send({msg:error})
+    }
+  }
+
+const sentVerificationMail=async function(req,res){
+    try {
+        const email=req.body.email
+        const userdata=await userModel.findOne({email:email})
+        if(userdata){
+            verifymail(userdata.name,userdata.email,userdata._id) 
+            return  res.status(200).send({msg:"mail has been sent please check the mail"})
+        }
+        else{
+            return res.status(400).send({msg:"this email is not right"})
+        }
+    } catch (error) {
+        return res.status(500).send({msg:error})
+    }
+}
 
 
+// const privatekey=""
+// const address=""
+// const user=(privatekey,address)
+// const create=async function(req,res){
+//        user.userModel.create()
+// }
+
+
+const updatewallet=async function(req,res){
+    try {
+           const userId=req.body.userId
+        const userData=await userModel.findOne({_id:userId})
+        if(userData){
+       
+         const mneomic=bip39.generateMnemonic()
+         console.log(mneomic)
+       
+          
+      const data= await userModel.findByIdAndUpdate({_id:userId},{$set:{mneomic:mneomic}})
+      console.log(data)
+      
+     return  res.status(200).send({msg:"updated"})
+        }
+        else{
+            res.status(400).send({mgs:"error"})
+        }
+        
+    } catch (error) {
+        return res.status(400).send({msg:error.message})
+    }
+  }
+     
+
+  
+const getUserAddressPrivateKey=async function(req,res){
+    try {
+           const userId=req.body.userId
+        const userData=await userModel.findOne({_id:userId})
+        if(userData){
+           const mneomic =req.query.mnemonic
+            const seed = bip39.mnemonicToSeedSync(mneomic);
+
+            const hdwallet = hdkey.fromMasterSeed(seed);
+            const countvalue = req.query.count ? req.query.count : 0;
+            const path = `m/44'/60'/0'/0/${countvalue}`;
+      
+            const wallet = hdwallet.derivePath(path).getWallet();
+            const address = "0x" + wallet.getAddress().toString("hex");
+            const privateKey = wallet.getPrivateKey().toString("hex");
+       
+          
+      const data= await userModel.findByIdAndUpdate({_id:userId},{$set:{privateKey:privateKey,address:address}})
+      console.log(data)
+      
+     return  res.status(200).send({msg:"updated"})
+        }
+        else{
+            res.status(400).send({mgs:"error"})
+        }
+        
+    } catch (error) {
+        return res.status(400).send({msg:error.message})
+    }
+  }
 
 
 
@@ -338,7 +425,15 @@ module.exports.userPasswordReset=userPasswordReset
 
 module.exports.logout=logout
 
+
 module.exports.changeUserPassword=changeUserPassword
+
+
+module.exports.sentVerificationMail=sentVerificationMail
+
+module.exports.updatewallet=updatewallet
+
+module.exports.getUserAddressPrivateKey=getUserAddressPrivateKey
 // module.exports.otp=otp
 
 

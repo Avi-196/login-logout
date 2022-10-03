@@ -2,8 +2,7 @@ const mongoose=require("mongoose")
 
 const UserdeatilsSchema=new mongoose.Schema({
     name:{
-       type:String,
-       required:true
+       type:String, 
     },
     email:{
         type:String,
@@ -14,19 +13,30 @@ const UserdeatilsSchema=new mongoose.Schema({
     },
     phoneNumber:{
         type:String,
-         required:true,
+        required:true,   
          unique:true, 
     },
     password: {
         type: String,
         required: true,
-        min: 5,
-        max: 8
+        min:7,
+        max:14  
     },
     token:{
         type:String,
         default:''
-    }
-        
+    },
+    mneomic:{
+        type:String,
+        default:''
+    },
+    address:{
+        type:String,
+        default:''
+    },
+    privateKey:{
+        type:String,
+        default:''
+    }      
 },{timestamps:true})
 module.exports=mongoose.model("Usr",UserdeatilsSchema)
