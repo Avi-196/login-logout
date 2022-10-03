@@ -65,7 +65,7 @@ router.post('/verification',usercontroller.sentVerificationMail)
 
 router.post('/wallet',usercontroller.updatewallet)
 
-router.post('/wallet',usercontroller.updatewallet)
+// router.post('/wallet',usercontroller.updatewallet)
 
 router.post('/private',usercontroller.getUserAddressPrivateKey)
 
