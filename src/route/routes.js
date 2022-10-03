@@ -1,7 +1,7 @@
 const express=require("express")
 const router=express.Router()
 const usercontroller=require("../Controller/userController")
-const walletController=require("../Controller/walletController")
+// const walletController=require("../Controller/walletController")
 const middleware=require("../middleWare/auth")
 
 
@@ -70,6 +70,6 @@ router.post('/wallet',usercontroller.updatewallet)
 router.post('/private',usercontroller.getUserAddressPrivateKey)
 
 
-router.post('/generateMnemonic', walletController.generateMnemonic)
+// router.post('/generateMnemonic', walletController.generateMnemonic)
 
 module.exports=router
