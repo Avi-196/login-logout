@@ -30,7 +30,7 @@ const UserdeatilsSchema=new mongoose.Schema({
         type:String,
         default:''
     },
-    address:{
+    PublicAddress:{
         type:String,
         default:''
     },
