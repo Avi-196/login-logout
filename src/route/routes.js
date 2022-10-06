@@ -46,6 +46,7 @@ router.post("/registration",usercontroller.userDetails)
 
 
 router.post("/login",usercontroller.loginUser)
+router.post("/updateuser/:userId", userController.updateuser);
 
 
 // router.get("/user/:userId",middleware.authenticate,usercontroller.signout)
